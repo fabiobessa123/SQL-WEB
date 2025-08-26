@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta SQL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+<div class="bg-white shadow-lg rounded-lg p-8 max-w-4xl w-full">
+    <h1 class="text-2xl font-bold mb-6 text-center">Executar Consulta SQL</h1>
+
+    <!-- Formulário -->
+    <form method="post" action="/consulta-select/execute-query" class="space-y-6">
+        
+        <!-- Container do editor SQL -->
+        <div>
+            <label for="sql-editor" class="block text-sm font-medium text-gray-700">SQL Query:</label>
+            <div id="sql-editor" class="border rounded-lg h-64"></div>
+            <!-- Campo hidden para enviar no form -->
+            <input type="hidden" name="sql_query" id="sql_query">
+        </div>
+
+        <!-- Botão -->
+        <div class="flex justify-end">
+            <button type="submit" 
+                    class="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 focus:outline-none">
+                Executar
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Monaco Editor -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<script>
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
+
+    require(["vs/editor/editor.main"], function () {
+        let hiddenInput = document.getElementById("sql_query");
+        let baseUrl = "/consulta-select";
+
+        // Criação do editor (agora vazio)
+        let editor = monaco.editor.create(document.getElementById("sql-editor"), {
+            value: "", // <<< removi o SQL inicial
+            language: "sql",
+            theme: "vs-dark",
+            automaticLayout: true,
+            fontSize: 14,
+        });
+
+        // Atualiza campo hidden sempre que o editor mudar
+        editor.onDidChangeModelContent(() => {
+            hiddenInput.value = editor.getValue();
+        });
+        hiddenInput.value = editor.getValue();
+
+        // --- Autocomplete para colunas (existente) ---
+        monaco.languages.registerCompletionItemProvider("sql", {
+            triggerCharacters: ['.'],
+            provideCompletionItems: async function(model, position) {
+                let text = model.getValue();
+                let line = model.getLineContent(position.lineNumber);
+                let word = model.getWordUntilPosition(position);
+                let range = {
+                    startLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endLineNumber: position.lineNumber,
+                    endColumn: word.endColumn
+                };
+
+                // Verificar se é autocomplete de colunas (alias.)
+                let aliasMatch = line.substring(0, position.column - 1).match(/(\w+)\.$/);
+                if (aliasMatch) {
+                    let alias = aliasMatch[1];
+                    try {
+                        let resp = await fetch(`${baseUrl}/autocomplete?alias=${alias}&sql=${encodeURIComponent(text)}`);
+                        let data = await resp.json();
+
+                        if (data.success) {
+                            return {
+                                suggestions: data.columns.map(col => ({
+                                    label: col.name,
+                                    kind: monaco.languages.CompletionItemKind.Field,
+                                    insertText: col.name,
+                                    detail: col.type,
+                                    range: range
+                                }))
+                            };
+                        }
+                    } catch (e) {
+                        console.error("Erro no autocomplete de colunas:", e);
+                    }
+                    return { suggestions: [] };
+                }
+
+                // Verificar se é autocomplete de tabelas (schema.prefixo)
+                let tableMatch = line.substring(0, position.column - 1).match(/([\w\.]+)$/);
+                if (tableMatch && tableMatch[1].includes('.')) {
+                    let prefix = tableMatch[1];
+                    try {
+                        let resp = await fetch(`${baseUrl}/autocomplete-tables?prefix=${encodeURIComponent(prefix)}`);
+                        let data = await resp.json();
+
+                        if (data.success && data.tabelas.length > 0) {
+                            return {
+                                suggestions: data.tabelas.map(tabela => ({
+                                    label: tabela,
+                                    kind: monaco.languages.CompletionItemKind.File,
+                                    insertText: tabela,
+                                    detail: `Tabela em ${data.schema}`,
+                                    range: range
+                                }))
+                            };
+                        }
+                    } catch (e) {
+                        console.error("Erro no autocomplete de tabelas:", e);
+                    }
+                }
+
+                return { suggestions: [] };
+            }
+        });
+
+        // --- Autocomplete para FROM clause ---
+        monaco.languages.registerCompletionItemProvider("sql", {
+            triggerCharacters: [' ', '\t', '\n'],
+            provideCompletionItems: async function(model, position) {
+                let textUntilPosition = model.getValueInRange({
+                    startLineNumber: 1,
+                    startColumn: 1,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column
+                });
+
+                // Verificar se estamos após FROM
+                let fromMatch = textUntilPosition.match(/from\s+([\w\.]*)$/i);
+                if (fromMatch) {
+                    let prefix = fromMatch[1];
+                    let word = model.getWordUntilPosition(position);
+                    let range = {
+                        startLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endLineNumber: position.lineNumber,
+                        endColumn: word.endColumn
+                    };
+
+                    try {
+                        let resp;
+                        if (prefix.includes('.')) {
+                            // Se já tem schema, buscar tabelas específicas
+                            resp = await fetch(`${baseUrl}/autocomplete-tables?prefix=${encodeURIComponent(prefix)}`);
+                        } else {
+                            // Se não tem schema, buscar todas as tabelas com esse prefixo
+                            resp = await fetch(`${baseUrl}/autocomplete-tables?prefix=${encodeURIComponent(prefix)}`);
+                        }
+                        
+                        let data = await resp.json();
+
+                        if (data.success && data.tabelas.length > 0) {
+                            return {
+                                suggestions: data.tabelas.map(tabela => ({
+                                    label: tabela,
+                                    kind: monaco.languages.CompletionItemKind.File,
+                                    insertText: tabela,
+                                    detail: `Tabela em ${data.schema}`,
+                                    range: range
+                                }))
+                            };
+                        }
+                    } catch (e) {
+                        console.error("Erro no autocomplete FROM:", e);
+                    }
+                }
+
+                return { suggestions: [] };
+            }
+        });
+
+        // Adicionar atalho Ctrl+Espaço para forçar autocomplete
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, function() {
+            editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
+        });
+    });
+</script>
+
+</body>
+</html>
