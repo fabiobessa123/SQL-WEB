@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados da Consulta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+<!-- No início do results.html, após a abertura do body -->
+<div class="absolute top-4 right-4">
+    <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center">
+        <i class="fas fa-sign-out-alt mr-2"></i>Sair
+    </a>
+</div>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-800 mb-2">
+                <i class="fas fa-table mr-3"></i>Resultados da Consulta
+            </h1>
+        </div>
+
+        <!-- Content Card -->
+        <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Query Section -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-code mr-2 text-indigo-600"></i>Query Executada
+                    </h2>
+                    <a href="{{ base_url }}/" class="text-indigo-600 hover:text-indigo-800 flex items-center">
+                        <i class="fas fa-arrow-left mr-1"></i> Nova Consulta
+                    </a>
+                </div>
+                <div class="bg-gray-800 text-green-400 p-4 rounded-lg overflow-x-auto">
+                    <code class="font-mono text-sm">{{ query }}</code>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-database mr-2 text-indigo-600"></i>Resultados
+                    </h2>
+                    <div class="flex space-x-3">
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                            {{ total_registros }} registro(s)
+                        </span>
+                        <form method="post" action="{{ base_url }}/export-xlsx">
+                            <input type="hidden" name="dataframe" value="{{ dataframe }}">
+                            <button 
+                                type="submit" 
+                                class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>Exportar XLSX
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if resultados %}
+                <div class="overflow-x-auto shadow rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                {% for coluna in colunas %}
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {{ coluna }}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {{ resultados_html | safe }}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+                    <p class="text-gray-500 text-lg">Nenhum resultado encontrado para a consulta.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stats Footer -->
+        <div class="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow flex items-center">
+                <div class="bg-green-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Status</p>
+                    <p class="font-semibold">Consulta bem-sucedida</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow flex items-center">
+                <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-clock text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Executado em</p>
+                    <p class="font-semibold">{{ timestamp }}</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow flex items-center">
+                <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-database text-purple-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Conexão</p>
+                    <p class="font-semibold">Oracle Database</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+        </div>
+    </div>
+</body>
+</html>
