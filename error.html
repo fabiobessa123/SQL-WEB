@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro na Execução</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    {% if "timeout" in error.lower() %}
+                    <i class="fas fa-clock text-orange-500 text-5xl mb-4"></i>
+                    <h1 class="text-2xl font-bold text-orange-700">Timeout na Execução</h1>
+                    {% else %}
+                    <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+                    <h1 class="text-2xl font-bold text-red-700">Erro na Execução da Query</h1>
+                    {% endif %}
+                </div>
+
+                <div class="{% if 'timeout' in error.lower() %}bg-orange-50 border-orange-200{% else %}bg-red-50 border-red-200{% endif %} border rounded-lg p-4 mb-6">
+                    <p class="{% if 'timeout' in error.lower() %}text-orange-700{% else %}text-red-700{% endif %}"><strong>Erro:</strong> {{ error }}</p>
+                    {% if "timeout" in error.lower() %}
+                    <p class="text-orange-600 text-sm mt-2">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        Dica: Tente otimizar sua query ou filtrar mais os resultados.
+                    </p>
+                    {% endif %}
+                </div>
+
+                {% if query %}
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Query executada:</h2>
+                    <div class="bg-gray-800 text-green-400 p-4 rounded-lg overflow-x-auto">
+                        <code class="font-mono text-sm">{{ query }}</code>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="text-center">
+                    <a href="{{ base_url }}/" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors inline-flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Voltar e tentar novamente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
