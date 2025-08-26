@@ -1,24 +1,31 @@
-# 🔎 Consulta SQL Oracle
+📊 Oracle Query Manager
 
-Este projeto é uma aplicação para execução controlada de queries `SELECT` em um banco **Oracle**, com autenticação de usuários, controle de sessão e logging de consultas.
+Um sistema web para executar consultas SELECT em banco de dados Oracle, com autenticação de usuários, logging detalhado, exportação para Excel e autocomplete de tabelas e colunas.
 
-## 🚀 Funcionalidades
+⚡ Funcionalidades
 
-- Login de usuário com verificação no banco de dados
-- Sessão segura via cookies
-- Execução de queries `SELECT` com **timeout configurável**
-- Exportação de resultados para **Excel (.xlsx)**
-- Registro de logs de consultas no banco
-- Autocomplete de tabelas e colunas
-- Rotas protegidas por autenticação
-- Health check da aplicação
-- 
-- 🔍 Rotas Principais
+🔑 Login seguro (somente usuários de grupo autorizado)
 
-/login → Tela de login
+🔒 Sessões com cookies HttpOnly
 
-/consulta-select/ → Página inicial da aplicação (após login)
+⏱ Timeout configurável para queries longas (default: 1200s)
 
-/consulta-select/execute-query → Executa queries SELECT
+📑 Logs de consultas com:
 
-/consulta-select/export-xlsx → Exporta resultados para Excel
+Usuário
+
+Query executada
+
+Data/Hora
+
+IP e User-Agent
+
+Status (✅ sucesso / ❌ erro)
+
+Tempo de execução
+
+📤 Exportação para Excel (XLSX) dos resultados
+
+🧩 Autocomplete de tabelas e colunas via DBLINK
+
+🎨 Interface moderna com TailwindCSS + Jinja2
